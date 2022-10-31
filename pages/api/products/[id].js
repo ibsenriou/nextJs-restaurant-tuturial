@@ -5,7 +5,10 @@ export default async function handler(req, res) {
   const {
     method,
     query: { id },
+    cookies,
   } = req;
+
+  const token = cookies.token;
 
   await dbConnect();
 
@@ -19,8 +22,14 @@ export default async function handler(req, res) {
   }
 
   if (method === 'PUT') {
+    if (!token || token !== process.env.TOKEN) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+
     try {
-      const product = await Product.create(req.body);
+      const product = await Product.findByIdAndUpdate(id, req.body, {
+        new: true,
+      });
       res.status(201).json(product);
     } catch (err) {
       res.status(500).json(err);
@@ -28,9 +37,13 @@ export default async function handler(req, res) {
   }
 
   if (method === 'DELETE') {
+    if (!token || token !== process.env.TOKEN) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+
     try {
-      const product = await Product.create(req.body);
-      res.status(201).json(product);
+      await Product.findByIdAndDelete(id);
+      res.status(200).json('The product has been deleted!');
     } catch (err) {
       res.status(500).json(err);
     }
